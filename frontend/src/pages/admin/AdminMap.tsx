@@ -1,33 +1,50 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api, type ReportDetail } from '../../services/api';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { SeverityBadge } from '../../components/common/SeverityBadge';
+import { PriorityBadge } from '../../components/common/PriorityBadge';
+import { Filter, RefreshCw } from 'lucide-react';
 
-// Fix default Leaflet icon paths in React bundle
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+// Custom Leaflet DivIcons for severity-pulsing map markers
+const createCustomIcon = (severity?: string) => {
+  const norm = (severity || 'MEDIUM').toUpperCase();
+  let colorClass = 'bg-amber-500 border-amber-300 marker-pulse-medium';
 
-const defaultIcon = L.icon({
-  iconUrl,
-  iconRetinaUrl,
-  shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+  if (norm === 'CRITICAL' || norm === 'EXTREME') {
+    colorClass = 'bg-red-500 border-red-300 marker-pulse-critical';
+  } else if (norm === 'HIGH') {
+    colorClass = 'bg-orange-500 border-orange-300 marker-pulse-high';
+  } else if (norm === 'LOW') {
+    colorClass = 'bg-emerald-500 border-emerald-300 marker-pulse-low';
+  } else if (norm === 'NONE') {
+    colorClass = 'bg-slate-500 border-slate-400';
+  }
 
-L.Marker.prototype.options.icon = defaultIcon;
+  return L.divIcon({
+    className: 'custom-leaflet-marker',
+    html: `<div class="w-6 h-6 rounded-full border-2 ${colorClass} flex items-center justify-center text-white shadow-lg text-[10px] font-bold">📍</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+  });
+};
 
 export default function AdminMap() {
   const [reports, setReports] = useState<ReportDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Filters state
+  const [severityFilter, setSeverityFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  const fetchReports = () => {
+    setLoading(true);
+    setError(null);
     api.getReports()
       .then(data => {
         setReports(data || []);
@@ -38,114 +55,163 @@ export default function AdminMap() {
         setError(err.message || 'Failed to load report map data');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchReports();
   }, []);
 
-  // Filter reports with valid numeric coordinates
-  const mappedReports = reports.filter(
-    r => typeof r.location?.latitude === 'number' && typeof r.location?.longitude === 'number'
-  );
+  // Filter reports with valid numeric coordinates and active filter matching
+  const mappedReports = useMemo(() => {
+    return reports.filter(r => {
+      const hasCoords = typeof r.location?.latitude === 'number' && typeof r.location?.longitude === 'number';
+      if (!hasCoords) return false;
 
-  // Default center (Chennai) or first valid report coordinate
-  const centerLat = mappedReports.length > 0 ? (mappedReports[0].location.latitude || 13.0827) : 13.0827;
-  const centerLng = mappedReports.length > 0 ? (mappedReports[0].location.longitude || 80.2707) : 80.2707;
+      const severityMatch = severityFilter === 'ALL' || (r.ai?.severity || 'UNKNOWN').toUpperCase() === severityFilter;
+      const statusMatch = statusFilter === 'ALL' || (r.status || '').toLowerCase() === statusFilter.toLowerCase();
+
+      return severityMatch && statusMatch;
+    });
+  }, [reports, severityFilter, statusFilter]);
+
+  const centerLat = mappedReports.length > 0 ? mappedReports[0].location.latitude! : 13.0827;
+  const centerLng = mappedReports.length > 0 ? mappedReports[0].location.longitude! : 80.2707;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      <div className="flex justify-between items-end border-b border-slate-200 pb-5">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-slate-100">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Map View</h1>
-          <p className="text-slate-500 text-sm mt-1">Live OpenStreetMap telemetry and spatial hazard distribution.</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight">GIS Command Map</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              LEAFLET + OSM TELEMETRY
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">Spatial hazard positioning with severity pulse markers & instant report inspect.</p>
         </div>
-        <div className="flex items-center gap-3 text-xs font-medium">
-          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-semibold">
-            OpenStreetMap Live
-          </span>
-          <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-semibold">
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchReports}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Pins
+          </button>
+          <span className="px-3.5 py-1.5 bg-indigo-950/60 text-indigo-300 border border-indigo-800 rounded-xl text-xs font-mono font-semibold">
             {mappedReports.length} Mapped Hazards
           </span>
         </div>
       </div>
 
-      {loading ? (
-        <div className="bg-white p-12 rounded-xl border border-slate-200 text-center text-slate-500 shadow-sm">
-          Loading OpenStreetMap telemetry...
-        </div>
-      ) : error ? (
-        <div className="bg-white p-8 rounded-xl border border-red-200 bg-red-50 text-center text-red-600 shadow-sm">
-          {error}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Summary Strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-              <span className="text-xs font-semibold text-slate-400 uppercase">Total Geolocation Reports</span>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{mappedReports.length}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-              <span className="text-xs font-semibold text-slate-400 uppercase">Critical & High Priority</span>
-              <p className="text-2xl font-bold text-amber-600 mt-1">
-                {mappedReports.filter(r => r.ai?.priority === 'P0' || r.ai?.priority === 'P1' || r.ai?.severity === 'CRITICAL' || r.ai?.severity === 'HIGH').length}
-              </p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-              <span className="text-xs font-semibold text-slate-400 uppercase">AI Verified Hazards</span>
-              <p className="text-2xl font-bold text-indigo-600 mt-1">
-                {mappedReports.filter(r => r.status === 'AI_VERIFIED').length}
-              </p>
-            </div>
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-slate-800 bg-slate-900/40 text-xs">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 text-slate-400 font-mono">
+            <Filter className="w-4 h-4 text-cyan-400" /> FILTER GIS STREAM:
           </div>
 
-          {/* Interactive OpenStreetMap Container */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[550px] relative">
-            <MapContainer
-              center={[centerLat, centerLng]}
-              zoom={12}
-              scrollWheelZoom={true}
-              className="w-full h-[550px] z-0"
+          {/* Severity Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400 font-mono text-[11px]">Severity:</span>
+            <select
+              value={severityFilter}
+              onChange={e => setSeverityFilter(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:ring-1 focus:ring-indigo-500"
             >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {mappedReports.map((report) => (
-                <Marker
-                  key={report.report_id}
-                  position={[report.location.latitude!, report.location.longitude!]}
-                >
-                  <Popup>
-                    <div className="p-1 min-w-[200px] text-slate-800">
-                      <div className="flex items-center justify-between gap-2 mb-2 pb-1 border-b border-slate-200">
-                        <span className="font-mono text-xs font-bold text-slate-900">{report.report_id}</span>
-                        <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-                          {report.status}
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold mb-1 text-slate-900">{report.location.road_name || 'Road Name Unspecified'}</p>
-                      <p className="text-[11px] text-slate-500 mb-2">
-                        Lat: {report.location.latitude}, Long: {report.location.longitude}
-                      </p>
-                      {report.ai && (
-                        <div className="bg-slate-50 p-2 rounded text-xs space-y-1 mb-2 border border-slate-200">
-                          <div><span className="font-semibold text-slate-600">Severity:</span> <span className="font-bold">{report.ai.severity || 'N/A'}</span></div>
-                          <div><span className="font-semibold text-slate-600">Priority:</span> <span className="font-bold">{report.ai.priority || 'N/A'}</span></div>
-                          <div><span className="font-semibold text-slate-600">Cost Est:</span> <span>{report.ai.estimated_cost || 'N/A'}</span></div>
-                        </div>
-                      )}
-                      <Link
-                        to={`/admin/reports/${report.report_id}`}
-                        className="block text-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 py-1.5 rounded transition-colors"
-                      >
-                        Inspect Report Details →
-                      </Link>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+              <option value="ALL">All Severities</option>
+              <option value="CRITICAL">Critical Only</option>
+              <option value="HIGH">High Only</option>
+              <option value="MEDIUM">Medium Only</option>
+              <option value="LOW">Low Only</option>
+              <option value="NONE">None Only</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400 font-mono text-[11px]">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="ai_processing">AI Processing</option>
+              <option value="ai_verified">AI Verified</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
           </div>
         </div>
-      )}
+
+        {/* Marker Legend */}
+        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Critical</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> High</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Medium</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Low</span>
+        </div>
+      </div>
+
+      {/* Main Map Viewport */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden min-h-[600px] relative">
+        {loading ? (
+          <div className="p-12 text-center text-slate-500">Loading GIS map telemetry...</div>
+        ) : error ? (
+          <div className="p-12 text-center text-red-400">{error}</div>
+        ) : (
+          <MapContainer
+            center={[centerLat, centerLng]}
+            zoom={12}
+            scrollWheelZoom={true}
+            className="w-full h-[600px] z-0"
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {mappedReports.map((report) => (
+              <Marker
+                key={report.report_id}
+                position={[report.location.latitude!, report.location.longitude!]}
+                icon={createCustomIcon(report.ai?.severity)}
+              >
+                <Popup>
+                  <div className="p-2 min-w-[240px] text-slate-900 space-y-2">
+                    <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-200">
+                      <span className="font-mono text-xs font-bold text-indigo-700">{report.report_id}</span>
+                      <StatusBadge status={report.status} size="sm" />
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-900 leading-snug">
+                        {report.location.road_name || 'Road Name Unspecified'}
+                      </p>
+                      <p className="text-[10px] font-mono text-slate-500">
+                        Lat: {report.location.latitude?.toFixed(4)}, Lng: {report.location.longitude?.toFixed(4)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <SeverityBadge severity={report.ai?.severity || 'MEDIUM'} size="sm" />
+                      <PriorityBadge priority={report.ai?.priority || 'P2'} size="sm" />
+                    </div>
+
+                    <Link
+                      to={`/admin/reports/${report.report_id}`}
+                      className="mt-2 block text-center text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 py-1.5 rounded-lg transition-colors shadow-sm"
+                    >
+                      Inspect Report Evidence Workspace →
+                    </Link>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api, type ReportDetail } from '../../services/api';
+import { AIPipelineVisualizer } from '../../components/AIPipelineVisualizer';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { SeverityBadge } from '../../components/common/SeverityBadge';
+import { PriorityBadge } from '../../components/common/PriorityBadge';
+import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
+import { ArrowLeft, CheckCircle2, AlertTriangle, MapPin, Send } from 'lucide-react';
 
 export default function ReportAssessment() {
   const { id } = useParams<{ id: string }>();
@@ -12,7 +18,7 @@ export default function ReportAssessment() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Form State
+  // Field Inputs State
   const [roadCategory, setRoadCategory] = useState('Arterial');
   const [roadEnvironment, setRoadEnvironment] = useState('Urban');
   const [approxLength, setApproxLength] = useState('1.5');
@@ -64,7 +70,7 @@ export default function ReportAssessment() {
       setSubmitSuccess(true);
       setTimeout(() => {
         navigate('/engineer');
-      }, 2000);
+      }, 1800);
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to submit assessment');
     } finally {
@@ -72,161 +78,131 @@ export default function ReportAssessment() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">Loading inspection report...</div>;
-  if (error || !report) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-red-600 font-medium">{error || 'Report not found'}</div>;
+  if (loading) return <div className="min-h-screen bg-slate-100 p-6 max-w-5xl mx-auto"><LoadingSkeleton type="detail" /></div>;
+  if (error || !report) return <div className="min-h-screen bg-slate-100 flex items-center justify-center text-red-600 font-bold">{error || 'Report not found'}</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center py-8 px-4">
-      <div className="w-full max-w-5xl space-y-6">
-        <Link to="/engineer" className="text-civic-blue hover:underline text-sm font-medium flex items-center gap-1">
-          ← Back to Queue
-        </Link>
-        
-        <div className="flex justify-between items-end border-b border-slate-200 pb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Field Engineering Assessment</h1>
-            <p className="font-mono text-slate-500 text-sm mt-1">Report ID: {report.report_id}</p>
-          </div>
-          <span className="px-3.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold rounded-full text-xs uppercase tracking-wider">
-            {report.status}
+    <div className="min-h-screen bg-slate-100 flex flex-col items-center py-8 px-4 font-sans text-slate-900">
+      <div className="w-full max-w-6xl space-y-6">
+        {/* Top Breadcrumb */}
+        <div className="flex justify-between items-center">
+          <Link to="/engineer" className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Inspection Queue
+          </Link>
+          <span className="text-[11px] font-mono text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">
+            Live Engineering Assessment Form
           </span>
         </div>
 
+        {/* Header */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Field Engineering Assessment</h1>
+              <StatusBadge status={report.status} size="md" />
+            </div>
+            <p className="font-mono text-xs font-bold text-indigo-700 mt-1">ID: {report.report_id}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <SeverityBadge severity={report.ai?.severity || 'MEDIUM'} size="md" />
+            <PriorityBadge priority={report.ai?.priority || 'P2'} size="md" />
+          </div>
+        </div>
+
         {submitSuccess && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center gap-2">
-            <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-            </svg>
-            Field Assessment submitted successfully! Returning to inspection queue...
+          <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>Field Assessment submitted successfully with backend status synchronization! Returning to queue...</span>
           </div>
         )}
 
         {submitError && (
-          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
-            {submitError}
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs font-medium flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+            <span>{submitError}</span>
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-6 items-start">
-          
-          {/* Left Column: Evidence */}
-          <div className="space-y-6">
-            
-            {/* Citizen Evidence Card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                <span className="font-bold text-slate-800 text-sm">Citizen Evidence & Photo</span>
-                <span className="text-xs font-mono text-slate-500">{new Date(report.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="p-4 space-y-4 text-sm">
-                {report.image?.url ? (
-                  <img src={report.image.url} alt="Reported issue" className="w-full h-64 object-cover rounded-lg border border-slate-200 shadow-sm" />
-                ) : (
-                  <div className="aspect-video bg-slate-100 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 font-mono">No Image Available</div>
-                )}
-                <div className="grid grid-cols-2 gap-y-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <div>
-                    <span className="block text-slate-400 text-xs uppercase font-semibold">Location</span> 
-                    <span className="font-medium text-slate-800 text-xs">{report.location?.road_name || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="block text-slate-400 text-xs uppercase font-semibold">Landmark</span> 
-                    <span className="font-medium text-slate-800 text-xs">{report.location?.landmark || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="block text-slate-400 text-xs uppercase font-semibold">Water Visible</span> 
-                    <span className="font-medium text-slate-800 text-xs">{report.water_visible ? 'Yes' : 'No'}</span>
-                  </div>
-                  <div>
-                    <span className="block text-slate-400 text-xs uppercase font-semibold">Danger Level</span> 
-                    <span className="font-medium text-slate-800 text-xs">{report.citizen_danger ? 'High Danger' : 'Normal'}</span>
-                  </div>
-                  <div className="col-span-2 pt-2 border-t border-slate-200">
-                    <span className="block text-slate-400 text-xs uppercase font-semibold">Citizen Description</span> 
-                    <p className="text-slate-800 text-xs italic mt-0.5">{report.description || 'No description provided.'}</p>
-                  </div>
+        {/* 3-Column Inspection Workspace Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Citizen Evidence & AI Visualizer (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Citizen Evidence */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-4">
+              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                <span className="w-2 h-2 rounded-full bg-sky-600" /> Citizen Field Evidence
+              </h3>
+
+              {report.image?.url ? (
+                <img src={report.image.url} alt="Field Evidence" className="w-full h-52 object-cover rounded-2xl border border-slate-200 shadow-sm" />
+              ) : (
+                <div className="w-full h-52 bg-slate-100 flex items-center justify-center rounded-2xl border border-slate-200 text-slate-400 font-mono text-xs">
+                  No Image
                 </div>
+              )}
+
+              <div className="space-y-2 text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <p className="font-semibold text-slate-900 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-sky-600" />
+                  {report.location?.road_name || 'N/A'}
+                </p>
+                {report.location?.landmark && <p className="text-slate-500 text-[11px] pl-4">Landmark: {report.location.landmark}</p>}
+                {report.description && <p className="text-slate-700 italic pt-1 border-t border-slate-200">"{report.description}"</p>}
               </div>
             </div>
 
-            {/* AI Evidence Card */}
-            <div className="bg-indigo-50/50 rounded-xl border border-indigo-100 shadow-sm overflow-hidden">
-               <div className="bg-indigo-100/60 px-4 py-3 border-b border-indigo-200 flex items-center justify-between">
-                <span className="font-bold text-indigo-900 text-sm">AI Computer Vision Telemetry</span>
-                <span className="text-xs font-bold text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200">
-                  {report.ai?.severity || 'AI VERIFIED'}
-                </span>
-              </div>
-              <div className="p-4 space-y-3 text-sm">
-                {report.ai?.detection ? (
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                     <div>
-                       <span className="block text-indigo-400 font-semibold uppercase">Detection Result</span> 
-                       <span className="font-bold text-indigo-900">{report.ai.detection.pothole_detected ? 'Pothole Confirmed' : 'No Pothole'}</span>
-                     </div>
-                     <div>
-                       <span className="block text-indigo-400 font-semibold uppercase">Model Confidence</span> 
-                       <span className="font-bold text-indigo-900">{Math.round((report.ai.detection.confidence || 0) * 100)}%</span>
-                     </div>
-                  </div>
-                ) : (
-                  <p className="text-slate-500 italic text-xs">No AI detection telemetry data.</p>
-                )}
-                {report.ai?.ai_summary && (
-                  <div className="pt-2 border-t border-indigo-100 text-xs text-indigo-950">
-                    <span className="font-semibold block text-indigo-700 mb-0.5">AI Summary</span>
-                    <p className="italic">"{report.ai.ai_summary}"</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* AI Visualizer */}
+            <AIPipelineVisualizer report={report} />
           </div>
 
-          {/* Right Column: Engineering Form */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
-            <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Physical Measurement Form</h2>
+          {/* Right Column: Engineering Form (7 cols) */}
+          <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Physical Measurement & Inspection Form</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Live engineering assessment form with backend status synchronization.</p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">GPS Coordinates</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg bg-slate-50 font-mono" 
-                    defaultValue={report.location?.latitude ? `${report.location.latitude}, ${report.location.longitude}` : '13.0827, 80.2707'} 
+                  <label className="block font-semibold text-slate-700 mb-1">GPS Coordinates</label>
+                  <input
+                    type="text"
                     readOnly
+                    value={report.location?.latitude ? `${report.location.latitude}, ${report.location.longitude}` : '13.0827, 80.2707'}
+                    className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl font-mono text-slate-700"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Pothole Number (ID)</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg bg-slate-50 font-mono font-bold" 
-                    readOnly 
-                    value={report.report_id} 
+                  <label className="block font-semibold text-slate-700 mb-1">Pothole Report ID</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={report.report_id}
+                    className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl font-mono font-bold text-indigo-700"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Road Category</label>
-                  <select 
-                    value={roadCategory} 
+                  <label className="block font-semibold text-slate-700 mb-1">Road Category</label>
+                  <select
+                    value={roadCategory}
                     onChange={e => setRoadCategory(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900"
                   >
-                    <option value="Arterial">Arterial Road</option>
+                    <option value="Arterial">Arterial Major Highway</option>
                     <option value="Collector">Collector Road</option>
-                    <option value="Local">Local Street</option>
+                    <option value="Local">Local Residential Street</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Road Environment</label>
-                  <select 
-                    value={roadEnvironment} 
+                  <label className="block font-semibold text-slate-700 mb-1">Road Environment</label>
+                  <select
+                    value={roadEnvironment}
                     onChange={e => setRoadEnvironment(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900"
                   >
                     <option value="Urban">Urban Zone</option>
                     <option value="Suburban">Suburban</option>
@@ -235,33 +211,33 @@ export default function ReportAssessment() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Approx. Length (m)</label>
-                  <input 
-                    type="number" 
-                    step="0.1" 
+                  <label className="block font-semibold text-slate-700 mb-1">Approx. Length (meters)</label>
+                  <input
+                    type="number"
+                    step="0.1"
                     value={approxLength}
                     onChange={e => setApproxLength(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue font-mono" 
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Approx. Width (m)</label>
-                  <input 
-                    type="number" 
-                    step="0.1" 
+                  <label className="block font-semibold text-slate-700 mb-1">Approx. Width (meters)</label>
+                  <input
+                    type="number"
+                    step="0.1"
                     value={approxWidth}
                     onChange={e => setApproxWidth(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue font-mono" 
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Apparent Depth</label>
-                  <select 
-                    value={apparentDepth} 
+                  <label className="block font-semibold text-slate-700 mb-1">Apparent Depth</label>
+                  <select
+                    value={apparentDepth}
                     onChange={e => setApparentDepth(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium"
                   >
                     <option value="Shallow">Shallow (&lt; 2 cm)</option>
                     <option value="Moderate">Moderate (2 - 5 cm)</option>
@@ -270,105 +246,105 @@ export default function ReportAssessment() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Surrounding Damage</label>
-                  <select 
-                    value={surroundingDamage} 
+                  <label className="block font-semibold text-slate-700 mb-1">Surrounding Damage</label>
+                  <select
+                    value={surroundingDamage}
                     onChange={e => setSurroundingDamage(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium"
                   >
-                    <option value="Minimal">Minimal</option>
+                    <option value="Minimal">Minimal Wear</option>
                     <option value="Cracking">Cracking Asphalt</option>
-                    <option value="Severe">Severe Structural Loss</option>
+                    <option value="Severe">Severe Sub-base Structural Loss</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Water Drainage</label>
-                  <select 
-                    value={waterDrainage} 
+                  <label className="block font-semibold text-slate-700 mb-1">Water Drainage Condition</label>
+                  <select
+                    value={waterDrainage}
                     onChange={e => setWaterDrainage(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium"
                   >
                     <option value="Good">Good Drainage</option>
-                    <option value="Ponding">Water Ponding</option>
-                    <option value="Blocked">Blocked Drain</option>
+                    <option value="Ponding">Water Accumulating / Ponding</option>
+                    <option value="Blocked">Culvert / Drain Blocked</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Traffic Volume</label>
-                  <select 
-                    value={trafficLevel} 
+                  <label className="block font-semibold text-slate-700 mb-1">Traffic Impact Level</label>
+                  <select
+                    value={trafficLevel}
                     onChange={e => setTrafficLevel(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium"
                   >
-                    <option value="Low">Low Volume</option>
-                    <option value="Medium">Medium Volume</option>
-                    <option value="High">High Density</option>
+                    <option value="Low">Low Density</option>
+                    <option value="Medium">Medium Flow</option>
+                    <option value="High">High Density Traffic</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Safety Risk</label>
-                  <select 
-                    value={safetyRisk} 
+                  <label className="block font-semibold text-slate-700 mb-1">Safety Risk Level</label>
+                  <select
+                    value={safetyRisk}
                     onChange={e => setSafetyRisk(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium"
                   >
                     <option value="Low">Low Risk</option>
                     <option value="Moderate">Moderate Hazard</option>
                     <option value="High">High Risk</option>
-                    <option value="Critical">Critical Hazard</option>
+                    <option value="Critical">Critical Emergency</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nearby Landmark Hazard</label>
-                  <input 
-                    type="text" 
+                  <label className="block font-semibold text-slate-700 mb-1">Nearby Landmark Hazard Location</label>
+                  <input
+                    type="text"
                     value={nearbyRiskLocation}
                     onChange={e => setNearbyRiskLocation(e.target.value)}
-                    className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue" 
-                    placeholder="e.g. School zone, intersection" 
+                    placeholder="e.g. School zone, bus stand"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Engineering Field Observation</label>
-                <textarea 
+                <label className="block font-semibold text-slate-700 mb-1">Engineering Observation & Field Directive</label>
+                <textarea
                   rows={3}
                   value={engineeringObservation}
                   onChange={e => setEngineeringObservation(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue"
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Repair Urgency</label>
-                <select 
-                  value={urgency} 
+                <label className="block font-semibold text-slate-700 mb-1">Repair Urgency</label>
+                <select
+                  value={urgency}
                   onChange={e => setUrgency(e.target.value)}
-                  className="w-full p-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-civic-blue font-bold text-slate-800"
+                  className="w-full p-3 bg-slate-900 text-white rounded-xl font-bold"
                 >
                   <option value="Routine">Routine Schedule (Within 7 days)</option>
-                  <option value="Priority">Priority Repair (Within 48 hours)</option>
+                  <option value="Priority">Priority Dispatch (Within 48 hours)</option>
                   <option value="Emergency">Emergency Dispatch (Immediate)</option>
                 </select>
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={submitting}
-                  className="w-full py-3 bg-civic-blue hover:bg-civic-blue-dark text-white font-bold text-sm rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                  className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {submitting ? 'Submitting Assessment...' : 'Submit Assessment'}
+                  <Send className="w-4 h-4" />
+                  <span>{submitting ? 'Submitting Assessment...' : 'Submit Engineering Assessment'}</span>
                 </button>
               </div>
             </form>
           </div>
-
         </div>
       </div>
     </div>

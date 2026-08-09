@@ -29,6 +29,7 @@ export interface ReportDetail {
     repair_recommendation?: string;
     estimated_cost?: any;
     ai_summary?: string;
+    no_pothole?: boolean;
   };
   created_at: string;
   updated_at?: string;

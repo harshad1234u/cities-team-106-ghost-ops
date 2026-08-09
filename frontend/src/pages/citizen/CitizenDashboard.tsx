@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { api, type ReportDetail } from '../../services/api';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { SeverityBadge } from '../../components/common/SeverityBadge';
+import { EmptyState } from '../../components/common/EmptyState';
+import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
+import { Shield, PlusCircle, LogOut, RefreshCw, ArrowRight, MapPin, CheckCircle2 } from 'lucide-react';
 
 export default function CitizenDashboard() {
   const { user } = useAuth();
@@ -19,7 +24,7 @@ export default function CitizenDashboard() {
       const data = await api.getReports();
       setReports(data || []);
     } catch (err) {
-      console.error("Failed to load user reports:", err);
+      console.error("Failed to load citizen reports:", err);
     } finally {
       setLoading(false);
     }
@@ -31,129 +36,148 @@ export default function CitizenDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Bar */}
-      <header className="bg-civic-blue text-white px-6 py-4 flex justify-between items-center shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold text-sm">
-            CP
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      {/* Light & Friendly Header */}
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 shadow-sm sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-600/20">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 tracking-tight">CivoAI Citizen</h1>
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block -mt-0.5">
+                CIVIC ROAD SAFETY
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">CivoAI Citizen Portal</h1>
-        </div>
-        <div className="flex gap-4 items-center">
-          <span className="text-xs font-mono opacity-80 hidden sm:inline">{user?.email}</span>
-          <button 
-            onClick={handleLogout} 
-            className="text-xs px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded border border-white/20 transition-colors"
-          >
-            Logout
-          </button>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono text-slate-500 hidden sm:inline">{user?.email}</span>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Logout
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-6 space-y-8">
-        {/* Banner CTA */}
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center space-y-4">
-          <div className="inline-flex p-3 rounded-full bg-civic-blue/10 text-civic-blue mb-1">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        {/* Friendly Hero Banner */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-900 via-indigo-900 to-slate-900 text-white p-6 sm:p-10 shadow-xl shadow-sky-950/10 border border-sky-800/40">
+          <div className="relative z-10 space-y-4 max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/30">
+              <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" /> Active City Infrastructure Monitoring
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+              Keep your roads safer.
+            </h2>
+            <p className="text-sky-100/90 text-sm leading-relaxed">
+              Report potholes and hazardous road defects directly to municipal engineering teams for automated AI inspection, severity scoring, and priority repair.
+            </p>
+            <div className="pt-2">
+              <Link
+                to="/citizen/report"
+                className="inline-flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm rounded-2xl shadow-lg shadow-sky-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <PlusCircle className="w-5 h-5" />
+                <span>Report a Pothole Now</span>
+              </Link>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">Help Improve Your City Infrastructure</h2>
-          <p className="text-slate-600 text-sm max-w-xl mx-auto">
-            Report potholes and hazardous road conditions directly to municipal road engineering teams for automated AI assessment and priority repair.
-          </p>
-          <div>
-            <Link 
-              to="/citizen/report" 
-              className="inline-flex items-center gap-2 px-8 py-3 bg-civic-blue text-white font-semibold rounded-lg hover:bg-civic-blue-dark transition-colors shadow-md text-sm"
-            >
-              <span>Report a Pothole</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
+
+          {/* Decorative background visual element */}
+          <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-15 pointer-events-none hidden md:block">
+            <div className="w-full h-full bg-gradient-to-l from-sky-400 to-transparent rounded-full blur-3xl transform translate-x-12" />
           </div>
         </div>
 
-        {/* User Reports Section */}
+        {/* User Submitted Reports List */}
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-slate-900">Your Submitted Reports</h3>
-            <button 
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">Your Reported Hazards</h3>
+              <p className="text-xs text-slate-500">Track real-time AI processing & repair lifecycle</p>
+            </div>
+            <button
               onClick={fetchUserReports}
-              className="text-xs text-civic-blue hover:underline font-medium flex items-center gap-1"
+              disabled={loading}
+              className="text-xs font-semibold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-xl border border-sky-200 transition-colors flex items-center gap-1.5"
             >
-              🔄 Refresh List
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </button>
           </div>
 
           {loading ? (
-            <div className="bg-white p-12 text-center text-slate-400 rounded-xl border border-slate-200 animate-pulse">
-              Loading your submitted reports...
-            </div>
+            <LoadingSkeleton type="card" rows={2} />
           ) : reports.length === 0 ? (
-            <div className="bg-white p-12 rounded-xl border border-slate-200 text-center flex flex-col items-center">
-              <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p className="text-slate-700 font-semibold text-base">No reports submitted yet</p>
-              <p className="text-slate-400 text-xs mt-1 mb-4">Click "Report a Pothole" above to submit your first report.</p>
-            </div>
+            <EmptyState
+              title="No Reports Submitted Yet"
+              description="Help improve municipal road safety by submitting your first road hazard report."
+              actionLabel="Report a Pothole"
+              onAction={() => window.location.href = '/citizen/report'}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {reports.map((report) => (
-                <div key={report.report_id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div
+                  key={report.report_id}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
+                >
                   <div className="p-5 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className="font-mono font-bold text-slate-900 text-sm block">{report.report_id}</span>
-                        <span className="text-xs text-slate-400 font-mono">
+                        <span className="font-mono font-bold text-indigo-700 text-xs block">{report.report_id}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">
                           {new Date(report.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full uppercase ${
-                        report.status === 'ENGINEER_VERIFIED' ? 'bg-emerald-100 text-emerald-800' :
-                        report.status === 'AI_VERIFIED' ? 'bg-blue-100 text-blue-800' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {report.status}
-                      </span>
+                      <StatusBadge status={report.status} size="sm" />
                     </div>
 
-                    {report.image?.url ? (
-                      <img 
-                        src={report.image.url} 
-                        alt="Submitted Pothole" 
-                        className="w-full h-40 object-cover rounded-lg border border-slate-200" 
-                      />
-                    ) : (
-                      <div className="w-full h-40 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center text-xs text-slate-400 font-mono">
-                        No Image Available
-                      </div>
-                    )}
+                    {/* Image Preview */}
+                    <div className="w-full h-44 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 relative group">
+                      {report.image?.url ? (
+                        <img
+                          src={report.image.url}
+                          alt="Hazard evidence"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-mono">
+                          No Photo Attached
+                        </div>
+                      )}
+                    </div>
 
-                    <div className="text-xs text-slate-700 space-y-1">
-                      <p className="font-medium">📍 {report.location?.road_name || 'Location recorded'}</p>
-                      {report.location?.landmark && <p className="text-slate-500">Landmark: {report.location.landmark}</p>}
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                        {report.location?.road_name || 'Location recorded'}
+                      </p>
+                      {report.location?.landmark && (
+                        <p className="text-[11px] text-slate-500 pl-5">Near {report.location.landmark}</p>
+                      )}
                     </div>
 
                     {report.ai?.severity && (
-                      <div className="p-2.5 bg-indigo-50/70 border border-indigo-100 rounded-lg text-xs flex justify-between items-center">
-                        <span className="text-indigo-900 font-medium">AI Severity Assessment:</span>
-                        <span className="font-bold text-indigo-700">{report.ai.severity}</span>
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">AI Severity:</span>
+                        <SeverityBadge severity={report.ai.severity} size="sm" />
                       </div>
                     )}
                   </div>
 
-                  <div className="bg-slate-50 p-3 border-t border-slate-100 text-center">
-                    <Link 
+                  <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-mono text-[11px]">Track lifecycle</span>
+                    <Link
                       to={`/citizen/status/${report.report_id}`}
-                      className="text-xs font-semibold text-civic-blue hover:underline inline-flex items-center gap-1"
+                      className="font-bold text-sky-700 hover:text-sky-900 flex items-center gap-1"
                     >
-                      <span>Track Full Report Status</span>
-                      <span>→</span>
+                      View Status <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 </div>
