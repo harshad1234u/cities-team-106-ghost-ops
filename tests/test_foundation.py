@@ -5,9 +5,9 @@ from fastapi.testclient import TestClient
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from backend.app.main import app
-from backend.app.core.config import settings
-from backend.app.services.supabase_client import (
+from app.main import app
+from app.core.config import settings
+from app.services.supabase_client import (
     verify_supabase_connection,
     get_supabase_headers
 )

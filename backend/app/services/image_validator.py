@@ -3,7 +3,7 @@ import io
 import os
 from PIL import Image
 from fastapi import UploadFile, HTTPException
-from backend.app.core.config import settings
+from app.core.config import settings
 
 # Map allowed MIME types to file extensions
 MIME_TO_EXT = {

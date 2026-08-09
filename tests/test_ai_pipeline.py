@@ -13,7 +13,7 @@ if hasattr(sys.stdout, "reconfigure"):
 # Ensure project root is on sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from backend.app.core.config import settings
+from app.core.config import settings
 
 
 def print_result(name: str, passed: bool, detail: str = "") -> bool:
@@ -71,7 +71,7 @@ def test_ai_pipeline():
         print(f"{'=' * 50}")
         return 1
 
-    from backend.app.ai.roboflow import RoboflowService
+    from app.ai.roboflow import RoboflowService
 
     roboflow = RoboflowService()
     detection = roboflow.detect(image_bytes)
@@ -123,7 +123,7 @@ def test_ai_pipeline():
         print(f"{'=' * 50}")
         return 1
 
-    from backend.app.ai.nemotron import NemotronService
+    from app.ai.nemotron import NemotronService
 
     nemotron = NemotronService()
     try:
@@ -152,7 +152,7 @@ def test_ai_pipeline():
     # Step 4: Full pipeline test
     # ------------------------------------------------------------------
     print()
-    from backend.app.ai.pipeline import AIPipeline
+    from app.ai.pipeline import AIPipeline
 
     pipeline = AIPipeline()
     result = pipeline.run(image_bytes)

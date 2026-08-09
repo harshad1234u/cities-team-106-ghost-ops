@@ -2,8 +2,8 @@
 from datetime import datetime, timezone
 import httpx
 import logging
-from backend.app.core.config import settings
-from backend.app.services.supabase_client import get_supabase_headers
+from app.core.config import settings
+from app.services.supabase_client import get_supabase_headers
 
 logger = logging.getLogger("civoai.report_id")
 

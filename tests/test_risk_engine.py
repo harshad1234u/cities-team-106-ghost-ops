@@ -1,5 +1,5 @@
 import pytest
-from backend.app.core.risk_engine import calculate_risk
+from app.core.risk_engine import calculate_risk
 
 def test_risk_engine_no_pothole():
     sev, pri, rec, cost = calculate_risk(False, False, False, 0.0, {})

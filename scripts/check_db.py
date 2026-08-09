@@ -1,8 +1,9 @@
 import os
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
 import httpx
-from backend.app.core.config import settings
-from backend.app.services.supabase_client import get_supabase_headers
+from app.core.config import settings
+from app.services.supabase_client import get_supabase_headers
 
 def check_db():
     rest_url = settings.SUPABASE_URL.rstrip("/")

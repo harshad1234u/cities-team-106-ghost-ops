@@ -4,8 +4,8 @@ import logging
 import base64
 import re
 import httpx
-from backend.app.core.config import settings
-from backend.app.models import DetectionResult, VisualAnalysis
+from app.core.config import settings
+from app.models import DetectionResult, VisualAnalysis
 
 logger = logging.getLogger("civoai.nemotron")
 

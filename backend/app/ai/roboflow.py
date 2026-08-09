@@ -1,8 +1,8 @@
 """CivoAI Roboflow Detection Service"""
 import logging
 import httpx
-from backend.app.core.config import settings
-from backend.app.models import DetectionResult, Detection, BoundingBox
+from app.core.config import settings
+from app.models import DetectionResult, Detection, BoundingBox
 
 logger = logging.getLogger("civoai.roboflow")
 

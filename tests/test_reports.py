@@ -14,8 +14,8 @@ if hasattr(sys.stdout, "reconfigure"):
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from fastapi.testclient import TestClient
-from backend.app.main import app
-from backend.app.core.config import settings
+from app.main import app
+from app.core.config import settings
 
 client = TestClient(app)
 

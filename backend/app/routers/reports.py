@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Background
 from typing import Optional, List
 
 from pydantic import BaseModel
-from backend.app.models import (
+from app.models import (
     ReportResponse,
     ReportDetail,
     ImageInfo,
@@ -14,9 +14,9 @@ from backend.app.models import (
     ReportRemoveRequest,
     REMOVAL_REASONS,
 )
-from backend.app.services.image_validator import validate_image
-from backend.app.services.report_id import generate_report_id
-from backend.app.services.supabase_service import (
+from app.services.image_validator import validate_image
+from app.services.report_id import generate_report_id
+from app.services.supabase_service import (
     upload_report_image,
     delete_storage_file,
     download_storage_file,
@@ -32,8 +32,8 @@ from backend.app.services.supabase_service import (
     soft_delete_citizen_report,
     get_removed_citizen_reports,
 )
-from backend.app.core.risk_engine import calculate_risk
-from backend.app.services.email_service import send_admin_email
+from app.core.risk_engine import calculate_risk
+from app.services.email_service import send_admin_email
 
 logger = logging.getLogger("civoai.reports")
 
@@ -51,7 +51,7 @@ async def _verify_admin(authorization: str = Header(None)) -> str:
     token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
     
     # Verify JWT with Supabase Auth
-    from backend.app.core.config import settings
+    from app.core.config import settings
     import httpx
     
     auth_url = settings.SUPABASE_URL.rstrip("/")
@@ -80,8 +80,8 @@ async def _verify_admin(authorization: str = Header(None)) -> str:
         raise HTTPException(status_code=401, detail="Authentication verification failed.")
     
     # Check role from public.users table
-    from backend.app.services.supabase_service import _get_rest_url
-    from backend.app.services.supabase_client import get_supabase_headers
+    from app.services.supabase_service import _get_rest_url
+    from app.services.supabase_client import get_supabase_headers
     
     rest_url = _get_rest_url()
     headers = get_supabase_headers()
@@ -130,7 +130,7 @@ async def _run_ai_pipeline(report_id: str):
 
     # 4. Run AI pipeline
     try:
-        from backend.app.ai.pipeline import AIPipeline
+        from app.ai.pipeline import AIPipeline
         pipeline = AIPipeline()
         result = pipeline.run(image_bytes)
     except Exception as e:
@@ -188,7 +188,7 @@ async def _run_ai_pipeline(report_id: str):
         
         # 6. Trigger Admin Email Alert via Resend (Failure Isolated)
         try:
-            from backend.app.services.email_service import send_admin_pothole_alert
+            from app.services.email_service import send_admin_pothole_alert
             # Fetch unified report detail representation
             fresh_row = get_citizen_report_by_report_id(report_id)
             if fresh_row:

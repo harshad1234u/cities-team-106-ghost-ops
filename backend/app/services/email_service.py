@@ -7,7 +7,7 @@ after background AI processing and deterministic risk assessment complete.
 import logging
 import httpx
 from typing import Dict, Any, Optional, Set
-from backend.app.core.config import settings
+from app.core.config import settings
 
 logger = logging.getLogger("civoai.email")
 

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from backend.app.services.email_service import (
+from app.services.email_service import (
     send_admin_pothole_alert,
     build_email_subject,
     build_email_html,
@@ -15,7 +15,7 @@ def clear_idempotency():
 
 def test_email_configuration_check():
     """TEST 1: Missing or blank API key reports not configured gracefully without crashing."""
-    with patch("backend.app.services.email_service.settings") as mock_settings:
+    with patch("app.services.email_service.settings") as mock_settings:
         mock_settings.resend_key = ""
         mock_settings.EMAIL_PROVIDER_API_KEY = ""
         

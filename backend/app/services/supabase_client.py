@@ -1,7 +1,7 @@
 import os
 import httpx
 from typing import Dict, Any, Optional
-from backend.app.core.config import settings
+from app.core.config import settings
 
 def get_supabase_headers() -> Dict[str, str]:
     return {

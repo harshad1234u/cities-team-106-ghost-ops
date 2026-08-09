@@ -9,12 +9,12 @@ load_dotenv()
 API_URL = "http://localhost:8000/api/v1"
 TEST_IMAGE_PATH = os.getenv("TEST_IMAGE_PATH", "scripts/test_pothole.jpg")
 
-if not os.path.exists(TEST_IMAGE_PATH):
-    print(f"Error: {TEST_IMAGE_PATH} does not exist.")
-    print("Please use a real pothole image or the one found by the subagent.")
-    sys.exit(1)
-
 def run_test():
+    if not os.path.exists(TEST_IMAGE_PATH):
+        print(f"Error: {TEST_IMAGE_PATH} does not exist.")
+        print("Please use a real pothole image or set TEST_IMAGE_PATH environment variable.")
+        return False
+
     print("Submitting citizen report...")
     report_data = {
         "latitude": "37.7749",

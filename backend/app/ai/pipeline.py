@@ -1,8 +1,8 @@
 """CivoAI AI Pipeline Orchestrator"""
 import logging
-from backend.app.ai.roboflow import RoboflowService
-from backend.app.ai.nemotron import NemotronService
-from backend.app.models import PipelineResult
+from app.ai.roboflow import RoboflowService
+from app.ai.nemotron import NemotronService
+from app.models import PipelineResult
 
 logger = logging.getLogger("civoai.pipeline")
 
