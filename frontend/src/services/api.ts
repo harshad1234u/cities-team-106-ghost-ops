@@ -1,6 +1,9 @@
 import { supabase } from '../lib/supabase';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = (rawApiUrl && !rawApiUrl.includes('localhost')) 
+  ? rawApiUrl 
+  : 'https://civoai-backend.onrender.com/api/v1';
 
 export interface ReportDetail {
   report_id: string;
